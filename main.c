@@ -7,6 +7,17 @@
 #include <windows.h>
 #endif
 
+/* --- Прототипи функцій --- */
+int** allocate_matrix(int rows, int cols);
+void free_matrix(int** matrix, int rows);
+void print_matrix(int** matrix, int rows, int cols, const char* name);
+void fill_matrix(int** matrix, int rows, int cols);
+
+void max_min(int** A, int n_a, int* max_a, int* min_, int variant);
+int** traspose_b(int** B, int n_b, int m_b);
+void sort_matrix_a(int** A, int n_a, int target_row);
+void print_sums(int** A, int n_a, int** B, int n_b, int m_b);
+
 /**
  * @brief Динамічно виділяє пам'ять під двовимірну матрицю розміром rows x cols.
  * @param rows Кількість рядків.
@@ -178,42 +189,35 @@ void fill_matrix(int** matrix, int rows, int cols) {
  * @brief Сортує елементи матриці A (всю матрицю або один обраний рядок).
  * @param target_row Індекс рядка (-1 для всієї матриці).
  */
- void sort_matrix_a(int** a, int n_a, int target_row) {
+ void sort_matrix_a(int** A, int n_a, int target_row) {
     if (target_row >= 0 && target_row < n_a) {
         bubble_sort(A[target_row], n_a);
     } else if (target_row == -1) {
         int total = n_a * n_a;
         int* temp = (int*)malloc(total * sizeof(int));
-
         int idx = 0;
         for (int i = 0; i < n_a; i++) {
-            for (int j = 0; j < n_a; j++) {
-                temp[idx++] = A[i][j];
-            }
+            for (int j = 0; j < n_a; j++) temp[idx++] = A[i][j];
         }
-
         bubble_sort(temp, total);
-
         idx = 0;
         for (int i = 0; i < n_a; i++) {
-            for (int j = 0; j < n_a; j++) {
-                A[i][j] = temp[idx++];
-            }
+            for (int j = 0; j < n_a; j++) A[i][j] = temp[idx++];
         }
         free(temp);
     }
- }
+}
 
  /**
  * @brief Обчислює та виводить суму елементів рядків A і стовпців B.
  */
- void print_sum(int** A, int n_a, int** B, int n_b, int m_b) {
-   printf("\n=== Сума елементів рядків матриці A ===\n");
-   for (int i = 0; i < n_a; i**) {
-    int sum = 0;
-    for (int j = 0; j < n_a; j++) sum += A[i][j];
-    printf("Рядок %d: %d\n", i, sum);
-   }
+ void print_sums(int** A, int n_a, int** B, int n_b, int m_b) {
+    printf("\n=== Суми рядків матриці A ===\n");
+    for (int i = 0; i < n_a; i++) {
+        int sum = 0;
+        for (int j = 0; j < n_a; j++) sum += A[i][j];
+        printf("Рядок %d: %d\n", i, sum);
+    }
 
    printf("\n=== Сума елементів стовпців матриці B ===\n");
    for (int j = 0; j < m_b; j++) {
@@ -223,6 +227,7 @@ void fill_matrix(int** matrix, int rows, int cols) {
    }
  }
 
+ /* --- Головна програма --- */
 int main() {
 // Встановлюємо кодування UTF-8 для консолі Windows (вхід і вихід)
 #ifdef _WIN32
@@ -232,9 +237,105 @@ int main() {
 
     // Резервне налаштування локалі
     setlocale(LC_ALL, ".65001");
-
     srand((unsigned int)time(NULL));
 
-    printf("Лабораторна робота №4. Частина 2.\n");
+    int variant, n_a, n_b, m_b;
+
+    printf("=== Лабораторна робота №4 (Частина 2) ===\n");
+    printf("Введіть номер вашого варіанту: ");
+    scanf("%d", &variant);
+
+    n_a = variant; // Розмірність квадратної матриці A = na x na
+    printf("Введіть кількість рядків n_b для матриці B (для множення рекомендується %d): ", n_a);
+    scanf("%d", &n_b);
+    printf("Введіть кількість стовпців m_b для матриці B: ");
+    scanf("%d", &m_b);
+
+    int** A = allocate_matrix(n_a, n_a);
+    int** B = allocate_matrix(n_b, m_b);
+
+    if (!A || !B) {
+        printf("Помилка виділення пам'яті!\n");
+        return 1;
+    }
+
+    printf("\n--- Формування матриці A ---\n");
+    fill_matrix(A, n_a, n_a);
+
+    printf("\n--- Формування матриці B ---\n");
+    fill_matrix(B, n_b, m_b);
+
+    int choice;
+    do {
+        printf("\n================ МЕНЮ ================\n");
+        printf("1. Вивести поточні матриці A і B\n");
+        printf("2. Пошук Max/Min елементів у A (відносно головної діагоналі)\n");
+        printf("3. Транспонувати матрицю B\n");
+        printf("4. Множення матриць A x B\n");
+        printf("5. Сортування матриці A\n");
+        printf("6. Вивести суми рядків A та стовпців B\n");
+        printf("0. Вихід з програми\n");
+        printf("Ваш вибір: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+        case 1:
+            print_matrix(A, n_a, n_a, "A");
+            print_matrix(B, n_b, m_b, "B");
+            break;
+        case 2: {
+            int max_val = 0, min_val = 0;
+            max_min(A, n_a, &max_val, &min_val, variant);
+            printf("\nДля варіанту %d (%s головної діагоналі):\n", variant, (variant % 2 == 0) ? "нижче" : "вище");
+            printf("Max елемент: %d\nMin елемент: %d\n", max_val, min_val);
+            break;
+        }
+        case 3: {
+            int** B_T = transpore_b(B, n_b, m_b);
+            if (B_T) {
+                print_matrix(B_T, m_b, n_b, "B^T (Транспонована)");
+                free_matrix(B_T, m_b);
+            }
+            break;
+        }
+        case 4: {
+            int** C = mult_a_b(A, n_a, B, n_b, m_b);
+            if (C) {
+                print_matrix(C, n_a, m_b, "C = A x B");
+                free_matrix(C, n_a);
+            }
+            break;
+        }
+        case 5: {
+            int sort_opt;
+            printf("\n1 - Сортувати всю матрицю A\n2 - Сортувати конкретний рядок\nВибір: ");
+            scanf("%d", &sort_opt);
+            if (sort_opt == 1) {
+                sort_matrix_a(A, n_a, -1);
+                print_matrix(A, n_a, n_a, "A (Повністю відсортована)");
+            } else {
+                int row;
+                printf("Введіть номер рядка [0..%d]: ", n_a - 1);
+                scanf("%d", &row);
+                sort_matrix_a(A, n_a, row);
+                print_matrix(A, n_a, n_a, "A (З відсортованим рядком)");
+            }
+            break;
+        }
+        case 6:
+            print_sums(A, n_a, B, n_b, m_b);
+            break;
+        case 0:
+            printf("\nЗавершення роботи...\n");
+                break;
+            default:
+                printf("\nНекоректний вибір. Спробуйте ще раз.\n");
+        }
+    } while (choice != 0);
+
+    // Звільнення основної пам'яті
+    free_matrix(A, n_a);
+    free_matrix(B, n_b);
+
     return 0;
 }
